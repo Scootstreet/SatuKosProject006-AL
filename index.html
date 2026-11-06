@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SatuKos - Manajer Keuangan Modern</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --color-1: #dc2626; 
+            --color-2: #ffffff; 
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --success: #10b981;
+            --nav-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg: #090d16;
+            --card-bg: #131d31;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #1e293b;
+            --nav-bg: #131d31;
+            --color-2: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--bg);
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        .app-header {
+            padding: 16px 20px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .app-header h1 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--color-1);
+            letter-spacing: -0.8px;
+            text-transform: lowercase;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 90px;
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--nav-bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 70px;
+            z-index: 100;
+        }
+
+        .nav-item {
+            background: none;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.7rem;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .nav-item i { font-size: 1.25rem; }
+        .nav-item.active { color: var(--color-1); font-weight: 600; }
+
+        .nav-item-center {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .floating-btn {
+            position: absolute;
+            top: -26px;
+            background: var(--color-1);
+            color: white;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid var(--bg);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            font-size: 1.3rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .balance-card {
+            background: var(--color-1);
+            color: white;
+            border: none;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .balance-card h2 { font-size: 1.8rem; margin: 6px 0 12px 0; font-weight: 700; }
+
+        .balance-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 10px;
+            font-size: 0.82rem;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .custom-select-trigger, input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 0.92rem;
+            outline: none;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .preset-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+            max-height: 100px;
+            overflow-y: auto;
+            padding-bottom: 4px;
+        }
+
+        .preset-badge {
+            font-size: 0.78rem;
+            padding: 8px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            border: 1px solid var(--border);
+        }
+
+        .preset-badge.style-c1 {
+            background-color: var(--color-1);
+            color: white;
+            border-color: var(--color-1);
+        }
+
+        .preset-badge.style-c2 {
+            background-color: var(--color-2);
+            color: var(--text);
+            border-color: var(--border);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: var(--color-1);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* MODAL POPUP MODERN */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-box {
+            background: var(--card-bg);
+            width: 85%;
+            max-width: 360px;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-item {
+            padding: 14px 16px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .modal-item.active {
+            background: var(--bg);
+            border-color: var(--color-1);
+            color: var(--color-1);
+        }
+
+        .modal-item i {
+            font-size: 1.1rem;
+            color: var(--color-1);
+        }
+
+        .color-picker-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .color-picker-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg);
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .color-picker-box input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            background: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .excel-table-container {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--card-bg);
+            margin-bottom: 10px;
+        }
+
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            text-align: left;
+        }
+
+        .excel-table th { color: white; padding: 10px; font-weight: 600; }
+        .th-income { background: #059669; }
+        .th-expense { background: #dc2626; }
+        .excel-table td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+
+        .calc-display {
+            width: 100%;
+            height: 56px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            font-size: 1.6rem;
+            text-align: right;
+            padding: 12px;
+            color: var(--text);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .calc-btn { padding: 16px; font-size: 1.15rem; background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- TOP HEADER -->
+    <div class="app-header">
+        <h1>satukos</h1>
+        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; background: var(--bg); border: 1px solid var(--border); padding: 4px 10px; border-radius: 20px; letter-spacing: 0.5px;">by.dy.al</span>
+    </div>
+
+    <!-- CONTENT TABS -->
+    <div class="content-area">
+        <!-- TAB 1: HOME -->
+        <div id="tab-home" class="tab-content active">
+            <div class="card balance-card">
+                <span style="opacity: 0.9; font-size: 0.85rem;">Sisa Uang (Cash Flow)</span>
+                <h2 id="total-balance">Rp 0</h2>
+                <div class="balance-stats">
+                    <div>Pemasukan: <b id="total-income">Rp 0</b></div>
+                    <div>Pengeluaran: <b id="total-expense">Rp 0</b></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size: 0.95rem; margin-bottom: 12px; font-weight: 700;"><i class="fa-solid fa-bolt" style="color: var(--color-1);"></i> Input Transaksi</h3>
+                
+                <label>Jenis Transaksi</label>
+                <div class="custom-select-trigger" onclick="openTypeModal()">
+                    <span id="selected-type-text">Pengeluaran</span>
+                    <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: var(--text-muted);"></i>
+                </div>
+
+                <label>Pilih / Riwayat Keterangan (Scroll/Klik)</label>
+                <div class="preset-container" id="preset-list"></div>
+
+                <label>Keterangan</label>
+                <div class="custom-select-trigger" onclick="openDescModal()">
+                    <span id="selected-desc-text" style="color: var(--text-muted);">Pilih / Ketik Keterangan</span>
+                    <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: var(--text-muted);"></i>
+                </div>
+                <input type="hidden" id="desc">
+
+                <label>Nominal</label>
+                <input type="text" id="amount" inputmode="numeric" placeholder="Rp 0" autocomplete="off" oninput="formatRupiahInput(this)">
+                
+                <button class="btn-primary" onclick="addTransaction()">Simpan Transaksi</button>
+            </div>
+
+            <div class="card" style="background: rgba(0,0,0,0.03); border-color: var(--border);">
+                <h3 style="font-size: 0.9rem; color: var(--color-1); margin-bottom: 4px; font-weight: 700;"><i class="fa-solid fa-sparkles"></i> AI Financial Coach</h3>
+                <p id="ai-output" style="font-size: 0.82rem; color: var(--text); line-height: 1.4;">Mulai catat keuangan kosmu!</p>
+            </div>
+        </div>
+
+        <!-- TAB 2: TABEL EXCEL -->
+        <div id="tab-table" class="tab-content">
+            <div class="card">
+                <h3 style="font-size: 1rem; margin-bottom: 8px; font-weight: 700;"><i class="fa-solid fa-file-excel" style="color: #059669;"></i> Rincian Transaksi</h3>
+                
+                <div style="font-weight: 700; font-size: 0.85rem; color: #059669; margin: 10px 0 6px 0;">Pemasukan</div>
+                <div class="excel-table-container">
+                    <table class="excel-table">
+                        <thead><tr><th class="th-income">No</th><th class="th-income">Tanggal</th><th class="th-income">Ket</th><th class="th-income">Jumlah</th><th class="th-income">Aksi</th></tr></thead>
+                        <tbody id="excel-income-tbody"></tbody>
+                    </table>
+                </div>
+
+                <div style="font-weight: 700; font-size: 0.85rem; color: #dc2626; margin: 10px 0 6px 0;">Pengeluaran</div>
+                <div class="excel-table-container">
+                    <table class="excel-table">
+                        <thead><tr><th class="th-expense">No</th><th class="th-expense">Tanggal</th><th class="th-expense">Ket</th><th class="th-expense">Jumlah</th><th class="th-expense">Aksi</th></tr></thead>
+                        <tbody id="excel-expense-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: KALKULATOR -->
+        <div id="tab-calc" class="tab-content">
+            <div class="card">
+                <h3 style="font-size: 1rem; margin-bottom: 12px; font-weight: 700;"><i class="fa-solid fa-calculator"></i> Kalkulator Cepat</h3>
+                <input type="text" class="calc-display" id="calc-screen" readonly value="0">
+                <div class="calc-grid">
+                    <button class="calc-btn" onclick="calcClear()">C</button>
+                    <button class="calc-btn" onclick="calcAppend('/')">/</button>
+                    <button class="calc-btn" onclick="calcAppend('*')">×</button>
+                    <button class="calc-btn" onclick="calcDelete()"><i class="fa-solid fa-delete-left"></i></button>
+                    <button class="calc-btn" onclick="calcAppend('7')">7</button>
+                    <button class="calc-btn" onclick="calcAppend('8')">8</button>
+                    <button class="calc-btn" onclick="calcAppend('9')">9</button>
+                    <button class="calc-btn" onclick="calcAppend('-')">-</button>
+                    <button class="calc-btn" onclick="calcAppend('4')">4</button>
+                    <button class="calc-btn" onclick="calcAppend('5')">5</button>
+                    <button class="calc-btn" onclick="calcAppend('6')">6</button>
+                    <button class="calc-btn" onclick="calcAppend('+')">+</button>
+                    <button class="calc-btn" onclick="calcAppend('1')">1</button>
+                    <button class="calc-btn" onclick="calcAppend('2')">2</button>
+                    <button class="calc-btn" onclick="calcAppend('3')">3</button>
+                    <button class="calc-btn" style="grid-row: span 2; background: var(--color-1); color: white;" onclick="calcResult()">=</button>
+                    <button class="calc-btn" style="grid-column: span 2;" onclick="calcAppend('0')">0</button>
+                    <button class="calc-btn" onclick="calcAppend('.')">.</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: GRAFIK -->
+        <div id="tab-chart" class="tab-content">
+            <div class="card">
+                <h3 style="font-size: 1rem; margin-bottom: 12px; font-weight: 700;"><i class="fa-solid fa-chart-line" style="color: var(--color-1);"></i> Grafik Keuangan</h3>
+                <div style="background: var(--bg); padding: 12px; border-radius: 14px; border: 1px solid var(--border);">
+                    <canvas id="cashflowChart" style="max-height: 240px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: SETTINGS -->
+        <div id="tab-settings" class="tab-content">
+            <div class="card">
+                <h3 style="font-size: 1rem; margin-bottom: 14px; font-weight: 700;"><i class="fa-solid fa-gear"></i> Custom Tema & Warna</h3>
+                
+                <label>Mode Layar</label>
+                <div class="custom-select-trigger" onclick="switchThemeMode()">
+                    <span id="theme-mode-label">Mode Terang (Light)</span>
+                    <i class="fa-solid fa-moon"></i>
+                </div>
+
+                <label style="margin-top: 10px;">Pilih Kombinasi 2 Warna Custom</label>
+                <div class="color-picker-row">
+                    <div class="color-picker-box">
+                        <span style="font-size: 0.75rem; font-weight: 600;">Warna Utama</span>
+                        <input type="color" id="picker-color-1" value="#dc2626" onchange="updateCustomColors()">
+                    </div>
+                    <div class="color-picker-box">
+                        <span style="font-size: 0.75rem; font-weight: 600;">Warna Kedua</span>
+                        <input type="color" id="picker-color-2" value="#ffffff" onchange="updateCustomColors()">
+                    </div>
+                </div>
+
+                <button class="btn-primary" style="background: var(--danger); margin-top: 14px;" onclick="resetData()">Reset Semua Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAVBAR -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab('home', this)"><i class="fa-solid fa-house"></i><span>Home</span></button>
+        <button class="nav-item" onclick="switchTab('table', this)"><i class="fa-solid fa-table"></i><span>Tabel</span></button>
+        <div class="nav-item-center">
+            <button class="floating-btn" onclick="switchTab('calc', document.getElementById('btn-calc-nav'))" id="btn-calc-nav"><i class="fa-solid fa-calculator"></i></button>
+        </div>
+        <button class="nav-item" onclick="switchTab('chart', this)"><i class="fa-solid fa-chart-line"></i><span>Grafik</span></button>
+        <button class="nav-item" onclick="switchTab('settings', this)"><i class="fa-solid fa-user-gear"></i><span>Akun</span></button>
+    </nav>
+</div>
+
+<!-- MODAL POPUP JENIS TRANSAKSI -->
+<div class="modal-overlay" id="modal-type" onclick="closeModals(event)">
+    <div class="modal-box">
+        <div style="font-weight: 700; font-size: 1rem; margin-bottom: 6px;">Pilih Jenis Transaksi</div>
+        <div class="modal-item" id="opt-expense" onclick="selectType('expense')">
+            <span>Pengeluaran</span>
+            <i class="fa-solid fa-circle-dot" id="icon-expense"></i>
+        </div>
+        <div class="modal-item" id="opt-income" onclick="selectType('income')">
+            <span>Pemasukan</span>
+            <i class="fa-regular fa-circle" id="icon-income"></i>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL POPUP KETERANGAN / RIWAYAT -->
+<div class="modal-overlay" id="modal-desc" onclick="closeModals(event)">
+    <div class="modal-box">
+        <div style="font-weight: 700; font-size: 1rem; margin-bottom: 6px;">Pilih / Ketik Keterangan</div>
+        <input type="text" id="manual-desc-input" placeholder="Ketik keterangan baru..." style="margin-bottom: 6px;" oninput="onCustomDescInput(this.value)" onkeyup="handleDescKeyUp(event)">
+        <div id="modal-desc-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+    </div>
+</div>
+
+<!-- Chart.js & Script Utama -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let transactions = JSON.parse(localStorage.getItem('satukos_transactions')) || [];
+    let currentType = 'expense';
+    let currentThemeMode = localStorage.getItem('satukos_thememode') || 'light';
+    let color1 = localStorage.getItem('satukos_color1') || '#dc2626';
+    let color2 = localStorage.getItem('satukos_color2') || '#ffffff';
+    let chartInstance = null;
+
+    applyThemeSettings();
+
+    function switchTab(tabName, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+        if (btnElement && btnElement.classList.contains('nav-item')) btnElement.classList.add('active');
+        if (tabName === 'chart') renderChart();
+        if (tabName === 'table') renderTable();
+    }
+
+    function switchThemeMode() {
+        currentThemeMode = currentThemeMode === 'light' ? 'dark' : 'light';
+        localStorage.setItem('satukos_thememode', currentThemeMode);
+        applyThemeSettings();
+    }
+
+    function updateCustomColors() {
+        color1 = document.getElementById('picker-color-1').value;
+        color2 = document.getElementById('picker-color-2').value;
+        localStorage.setItem('satukos_color1', color1);
+        localStorage.setItem('satukos_color2', color2);
+        applyThemeSettings();
+    }
+
+    function applyThemeSettings() {
+        document.documentElement.setAttribute('data-theme', currentThemeMode);
+        document.getElementById('theme-mode-label').innerText = currentThemeMode === 'light' ? 'Mode Terang (Light)' : 'Mode Gelap (Dark)';
+        document.getElementById('picker-color-1').value = color1;
+        document.getElementById('picker-color-2').value = color2;
+
+        let root = document.documentElement;
+        root.style.setProperty('--color-1', color1);
+        if (currentThemeMode === 'light') {
+            root.style.setProperty('--color-2', color2);
+        }
+        
+        renderPresets();
+        if(chartInstance) renderChart();
+    }
+
+    /* MODAL HANDLERS */
+    function openTypeModal() { document.getElementById('modal-type').style.display = 'flex'; }
+    function openDescModal() { 
+        renderModalDescList();
+        document.getElementById('modal-desc').style.display = 'flex';
+        setTimeout(() => {
+            let inputField = document.getElementById('manual-desc-input');
+            inputField.focus();
+            inputField.value = '';
+        }, 100);
+    }
+
+    function closeModals(e) {
+        if (e.target.classList.contains('modal-overlay')) {
+            document.getElementById('modal-type').style.display = 'none';
+            document.getElementById('modal-desc').style.display = 'none';
+        }
+    }
+
+    function selectType(type) {
+        currentType = type;
+        document.getElementById('selected-type-text').innerText = type === 'expense' ? 'Pengeluaran' : 'Pemasukan';
+        
+        if (type === 'expense') {
+            document.getElementById('opt-expense').classList.add('active');
+            document.getElementById('opt-income').classList.remove('active');
+            document.getElementById('icon-expense').className = 'fa-solid fa-circle-dot';
+            document.getElementById('icon-income').className = 'fa-regular fa-circle';
+        } else {
+            document.getElementById('opt-income').classList.add('active');
+            document.getElementById('opt-expense').classList.remove('active');
+            document.getElementById('icon-income').className = 'fa-solid fa-circle-dot';
+            document.getElementById('icon-expense').className = 'fa-regular fa-circle';
+        }
+
+        document.getElementById('modal-type').style.display = 'none';
+        renderPresets();
+    }
+
+    function selectDesc(val) {
+        document.getElementById('desc').value = val;
+        document.getElementById('selected-desc-text').innerText = val;
+        document.getElementById('selected-desc-text').style.color = 'var(--text)';
+        document.getElementById('modal-desc').style.display = 'none';
+    }
+
+    function onCustomDescInput(val) {
+        if (val.trim()) {
+            document.getElementById('desc').value = val;
+            document.getElementById('selected-desc-text').innerText = val;
+            document.getElementById('selected-desc-text').style.color = 'var(--text)';
+        }
+    }
+
+    function handleDescKeyUp(e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            let val = document.getElementById('manual-desc-input').value.trim();
+            if (val) {
+                selectDesc(val);
+            } else {
+                document.getElementById('modal-desc').style.display = 'none';
+            }
+        }
+    }
+
+    function renderModalDescList() {
+        let listContainer = document.getElementById('modal-desc-list');
+        listContainer.innerHTML = '';
+
+        let filtered = transactions.filter(t => t.type === currentType);
+        let uniqueDesc = [...new Set(filtered.map(t => t.desc))];
+
+        if (uniqueDesc.length === 0) {
+            uniqueDesc = currentType === 'income' ? ['Gajian', 'Uang Saku Orang Tua', 'Transfer'] : ['Makan', 'Jajan', 'Listrik Kos', 'Parkir'];
+        }
+
+        uniqueDesc.forEach(d => {
+            let item = document.createElement('div');
+            item.className = 'modal-item';
+            item.innerHTML = `<span>${d}</span><i class="fa-solid fa-chevron-right" style="font-size:0.8rem; opacity:0.5;"></i>`;
+            item.onclick = () => selectDesc(d);
+            listContainer.appendChild(item);
+        });
+    }
+
+    function renderPresets() {
+        let list = document.getElementById('preset-list');
+        list.innerHTML = ''; 
+
+        let filtered = transactions.filter(t => t.type === currentType);
+        let uniqueDesc = [...new Set(filtered.map(t => t.desc))];
+
+        if (uniqueDesc.length === 0) {
+            uniqueDesc = currentType === 'income' ? ['Gajian', 'Uang Saku Orang Tua', 'Transfer'] : ['Makan', 'Jajan', 'Listrik Kos', 'Parkir'];
+        }
+
+        uniqueDesc.forEach((c, index) => {
+            let badge = document.createElement('span');
+            badge.className = 'preset-badge';
+            
+            if (index % 2 === 0) {
+                badge.classList.add('style-c1');
+            } else {
+                badge.classList.add('style-c2');
+            }
+
+            badge.innerText = c;
+            badge.onclick = () => selectDesc(c);
+            list.appendChild(badge);
+        });
+    }
+
+    function formatRupiahInput(input) {
+        let val = input.value.replace(/\D/g, '');
+        input.value = val ? parseInt(val, 10).toLocaleString('id-ID') : '';
+    }
+
+    function addTransaction() {
+        let desc = document.getElementById('desc').value.trim();
+        let rawAmt = document.getElementById('amount').value.replace(/\./g, '');
+        let amount = parseFloat(rawAmt);
+
+        if (!desc || isNaN(amount) || amount <= 0) { alert("Lengkapi keterangan dan nominal!"); return; }
+
+        let newTrans = {
+            id: Date.now(), desc, amount, type: currentType,
+            date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+        };
+
+        transactions.unshift(newTrans);
+        saveAndRefreshUI();
+
+        document.getElementById('desc').value = '';
+        document.getElementById('selected-desc-text').innerText = 'Pilih / Ketik Keterangan';
+        document.getElementById('selected-desc-text').style.color = 'var(--text-muted)';
+        document.getElementById('amount').value = '';
+        document.getElementById('manual-desc-input').value = '';
+    }
+
+    function deleteTransaction(id) {
+        transactions = transactions.filter(t => t.id !== id);
+        saveAndRefreshUI();
+    }
+
+    function resetData() {
+        if (confirm("Yakin ingin menghapus seluruh data transaksi?")) {
+            transactions = [];
+            saveAndRefreshUI();
+        }
+    }
+
+    function saveAndRefreshUI() {
+        localStorage.setItem('satukos_transactions', JSON.stringify(transactions));
+        updateSummary();
+        renderTable();
+        renderPresets();
+        runAI();
+    }
+
+    function updateSummary() {
+        let inc = transactions.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+        let exp = transactions.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+        let bal = inc - exp;
+        document.getElementById('total-balance').innerText = `Rp ${bal.toLocaleString('id-ID')}`;
+        document.getElementById('total-income').innerText = `Rp ${inc.toLocaleString('id-ID')}`;
+        document.getElementById('total-expense').innerText = `Rp ${exp.toLocaleString('id-ID')}`;
+    }
+
+    function renderTable() {
+        let incTbody = document.getElementById('excel-income-tbody');
+        let expTbody = document.getElementById('excel-expense-tbody');
+        incTbody.innerHTML = ''; expTbody.innerHTML = '';
+
+        let incomeList = transactions.filter(t => t.type === 'income');
+        let expenseList = transactions.filter(t => t.type === 'expense');
+
+        incomeList.forEach((t, index) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td style="text-align: center;">${index + 1}</td><td>${t.date}</td><td>${t.desc}</td><td style="text-align: right; color: #059669; font-weight:600;">Rp ${t.amount.toLocaleString('id-ID')}</td><td style="text-align: center;"><button onclick="deleteTransaction(${t.id})" style="border:none;background:none;color:var(--danger);cursor:pointer;"><i class="fa-solid fa-trash"></i></button></td>`;
+            incTbody.appendChild(tr);
+        });
+
+        expenseList.forEach((t, index) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td style="text-align: center;">${index + 1}</td><td>${t.date}</td><td>${t.desc}</td><td style="text-align: right; color: #dc2626; font-weight:600;">Rp ${t.amount.toLocaleString('id-ID')}</td><td style="text-align: center;"><button onclick="deleteTransaction(${t.id})" style="border:none;background:none;color:var(--danger);cursor:pointer;"><i class="fa-solid fa-trash"></i></button></td>`;
+            expTbody.appendChild(tr);
+        });
+    }
+
+    function renderChart() {
+        let ctx = document.getElementById('cashflowChart').getContext('2d');
+        let sortedTrans = [...transactions].reverse();
+        let labels = sortedTrans.map(t => t.date);
+        let incomeData = [], expenseData = [], runningInc = 0, runningExp = 0;
+
+        sortedTrans.forEach(t => {
+            if (t.type === 'income') runningInc += t.amount;
+            if (t.type === 'expense') runningExp += t.amount;
+            incomeData.push(runningInc);
+            expenseData.push(runningExp);
+        });
+
+        let textColor = currentThemeMode === 'dark' ? '#94a3b8' : '#64748b';
+
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels.length > 0 ? labels : ['Mulai'],
+                datasets: [
+                    { label: 'Pemasukan', data: incomeData.length > 0 ? incomeData : [0], borderColor: '#059669', backgroundColor: 'rgba(5, 150, 105, 0.1)', borderWidth: 2.5, fill: true, tension: 0.35 },
+                    { label: 'Pengeluaran', data: expenseData.length > 0 ? expenseData : [0], borderColor: '#dc2626', backgroundColor: 'rgba(220, 38, 38, 0.1)', borderWidth: 2.5, fill: true, tension: 0.35 }
+                ]
+            },
+            options: { 
+                responsive: true, 
+                plugins: { legend: { labels: { color: textColor }, position: 'bottom' } },
+                scales: {
+                    x: { ticks: { color: textColor }, grid: { display: false } },
+                    y: { ticks: { color: textColor }, grid: { color: currentThemeMode === 'dark' ? '#1e293b' : '#e2e8f0' } }
+                }
+            }
+        });
+    }
+
+    function runAI() {
+        let inc = transactions.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+        let exp = transactions.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+        let out = document.getElementById('ai-output');
+        if (transactions.length === 0) { out.innerText = "Mulai catat transaksi pertamamu!"; return; }
+        let ratio = inc > 0 ? (exp / inc) * 100 : 100;
+        out.innerText = (inc - exp) < 0 ? "🚨 BAHAYA! Pengeluaran melebihi pemasukan!" : (ratio > 80 ? "⚠️ WASPADA! Pengeluaran sudah >80% dari pemasukan." : "🎉 AMAN! Cash flow keuangan kos terkendali.");
+    }
+
+    let calcVal = "0";
+    function calcAppend(val) { calcVal = (calcVal === "0" && !isNaN(val)) ? val : calcVal + val; document.getElementById('calc-screen').value = calcVal; }
+    function calcClear() { calcVal = "0"; document.getElementById('calc-screen').value = calcVal; }
+    function calcDelete() { calcVal = calcVal.length > 1 ? calcVal.slice(0, -1) : "0"; document.getElementById('calc-screen').value = calcVal; }
+    function calcResult() { try { calcVal = eval(calcVal).toString(); document.getElementById('calc-screen').value = calcVal; } catch { calcVal = "0"; } }
+
+    saveAndRefreshUI();
+</script>
+</body>
+</html>
